@@ -191,57 +191,87 @@ void Base64Window::MessageReceived(BMessage* message)
 
 void Base64Window::encodeFile(BPath pathName, BEntry entry)
 {
+    // Create the file handler
 	BFile file(pathName.Path(), B_READ_ONLY);
     
+    // The length of the buffer
     off_t length;
+    
+    // The buffer
     char *text;
+    
+    // Get the size of the file and put it into length
     file.GetSize(&length);
+    
+    // Create the buffer the size of the file
     text = (char *) malloc(length);
 	
+    // Read the file to the text buffer
 	file.Read(text, length);
     
+    // Create the base64 encoded string from the file
 	std::string encoded = base64_encode(reinterpret_cast<const unsigned char *>(text), length);
     
+    // Create the c string from the c++ string
 	const char *textEncoded = encoded.c_str();
     
+    // Select all the text in the current text view
 	text_run_array *currentSelection = new text_run_array;
     
+    // Set the text view's text to be the encoded text
 	encodeTextView->SetText(textEncoded, currentSelection);
 }
 
 void Base64Window::decodeFile(BMessage *message)
 {
+    // Create error handling
  	entry_ref ref;
     status_t err;
+    
+    // Name of the file to save as when decoding
     const char *name;
     
+    // Path to decode to
     BPath path;
+    
+    // File system entry
     BEntry entry;
+    
+    // File handler
     FILE *file;
     
-    if ((err=message->FindRef("directory", &ref)) != B_OK) {
+    // Error checking
+    if ((err = message->FindRef("directory", &ref)) != B_OK) {
         return;
     }
     
-    if ((err=message->FindString("name", &name)) != B_OK) {
+    if ((err = message->FindString("name", &name)) != B_OK) {
         return;
     }
     
-    if ((err=entry.SetTo(&ref)) != B_OK) {
+    if ((err = entry.SetTo(&ref)) != B_OK) {
         return;
     }
+    // End of error checking
     
+    // Give the path to the BEntry
     entry.GetPath(&path);
+    
+    // Append the name to the path
     path.Append(name);
     
+    // If unable to open the file path, return
     if (!(file = fopen(path.Path(), "w"))) {
         return;
     }
     
+    // Decode the string
 	string decodedString = base64_decode(decodeTextView->Text());
     
+    // Write it out
 	err = fwrite(decodedString.c_str(), 1, decodeTextView->TextLength(), file);
     
+    // Close the file handler
     fclose(file);
 }
 
